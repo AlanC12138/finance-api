@@ -1,54 +1,50 @@
-from datetime import datetime, timedelta
-from jose import jwt, JWTError
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
+from jose import jwt, JWTError
+from datetime import datetime, timedelta
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-
+from .models import User
+from .db import get_session
 from sqlmodel import Session, select
 
-from .config import settings
-from .db import get_session
-from .models import User
+SECRET_KEY = "devsecret"        # replace with env var later
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+token_auth_scheme = HTTPBearer()   # <-- NO OAuth2
 
-# Hash password
 def hash_password(password: str):
     return pwd_context.hash(password)
 
-# Verify password
-def verify_password(plain: str, hashed: str):
-    return pwd_context.verify(plain, hashed)
+def verify_password(password: str, password_hash: str):
+    return pwd_context.verify(password, password_hash)
 
-# Create JWT token
-def create_access_token(data: dict, expires_minutes: int = 60):
-    payload = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
-    payload.update({"exp": expire})
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-# Decode & verify JWT
+
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(token_auth_scheme),
     session: Session = Depends(get_session)
-) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+):
+    token = credentials.credentials  # extract the token string
+
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
-        raise credentials_exception
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
 
     user = session.get(User, user_id)
     if not user:
-        raise credentials_exception
+        raise HTTPException(status_code=401, detail="User not found")
 
     return user
