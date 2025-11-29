@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from datetime import datetime
 
 
 class UserCreate(BaseModel):
@@ -34,3 +35,23 @@ class AccountRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class TransactionCreate(BaseModel):
+    account_id: int
+    amount: float
+    description: str = ""
+    type: str
+
+
+class TransactionRead(BaseModel):
+    id: int
+    account_id: int
+    amount: float
+    description: str
+    timestamp: datetime
+    type: str
+
+    class Config:
+        from_attributes = True
+

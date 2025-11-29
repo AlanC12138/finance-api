@@ -15,3 +15,15 @@ class Account(SQLModel, table=True):
     type: str  # e.g. "checking", "savings", "credit", "cash"
     balance: float = 0.0
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Transaction(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    account_id: int = Field(foreign_key="account.id")
+
+    amount: float                     # positive = income, negative = expense
+    description: str = ""
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+    type: str                         # "income", "expense", "transfer"
