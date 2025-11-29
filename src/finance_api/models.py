@@ -27,3 +27,10 @@ class Transaction(SQLModel, table=True):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     type: str                         # "income", "expense", "transfer"
+
+
+class Category(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    name: str
+    type: str  # "income" or "expense"

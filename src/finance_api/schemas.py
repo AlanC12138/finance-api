@@ -55,3 +55,16 @@ class TransactionRead(BaseModel):
     class Config:
         from_attributes = True
 
+
+class CategoryCreate(BaseModel):
+    name: str
+    type: str
+
+
+class CategoryRead(BaseModel):
+    id: int
+    name: str
+    type: str
+
+    class Config:
+        from_attributes = True
