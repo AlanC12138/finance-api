@@ -1,201 +1,125 @@
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![Python](https://img.shields.io/badge/python-3.11-blue.svg?style=for-the-badge&logo=python)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
-![Status](https://img.shields.io/badge/status-active-success?style=for-the-badge)
+# finance_api
 
-# **Personal Finance Manager API**
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-latest-009688?style=flat&logo=fastapi&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat&logo=docker&logoColor=white)
 
-A production-style backend for personal finance management.
-Built with **FastAPI**, **SQLModel**, **JWT auth**, **Argon2 password hashing**, and a clean architecture.
-
-Includes authentication, CRUD models, relational data, transactions, summaries, analytics, and API design.
+REST API for personal finance management — track accounts, transactions, and categories with JWT-authenticated endpoints and per-user data isolation.
 
 ---
 
-## **Features**
+## Quick Start
 
-### **Authentication & Security**
+### Docker (recommended)
 
-* JWT-based authentication
-* Argon2 password hashing 
-* User-scoped data separation
-* Token-protected endpoints
+```bash
+docker build -t finance-api:latest .
 
-### **Accounts**
-
-* Create checking/savings/cash/credit accounts
-* Automatic balance tracking
-* User-isolated accounts
-* CRUD operations
-
-### **Transactions**
-
-* Income, expense, and transfer support
-* Automatic balance updates
-* Timestamped entries
-* Optional descriptions
-* User-scoped isolation
-
-### **Categories**
-
-* Custom user categories
-* Income/expense type
-* CRUD support
-* Ready for transaction linking
-
-### **Summary & Analytics**
-
-* Monthly income/expense totals
-* Net cashflow
-* Simple category breakdown
-* Recent transactions feed
-* Account balance overview
-
----
-
-## **Tech Stack**
-
-* **FastAPI** – high-performance Python backend
-* **SQLModel** – modern ORM combining Pydantic + SQLAlchemy
-* **SQLite** – simple and portable relational database
-* **Argon2 (Passlib)** – secure password hashing
-* **PyJWT (python-jose)** – token creation and validation
-* **Uvicorn** – ASGI server
-
----
-
-## **Project Structure**
-
-```
-src/finance_api/
-│
-├── main.py                # App entrypoint + router registration
-├── auth.py                # JWT + password hashing + user extraction
-├── config.py              # Settings
-├── db.py                  # DB engine + session
-│
-├── models.py              # SQLModel ORM models
-├── schemas.py             # Pydantic schemas
-│
-└── routers/
-    ├── auth.py            # Login + register
-    ├── accounts.py        # Accounts CRUD
-    ├── transactions.py    # Transactions CRUD
-    ├── categories.py      # Categories CRUD
-    └── summary.py         # Analytics endpoints
+docker run --rm -p 8000:8000 \
+  -e SECRET_KEY=your-secret-key-here \
+  finance-api:latest
 ```
 
----
+The SQLite database is created automatically on startup. Visit `http://localhost:8000/docs` for the interactive API docs.
 
-## **Running locally**
+### Local (no Docker)
 
-### **1. Install dependencies**
-
-```
+```bash
 pip install -r requirements.txt
-```
-
-### **2. Start development server**
-
-```
-uvicorn src.finance_api.main:app --reload
-```
-
-### **3. Open API documentation**
-
-Visit:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-This includes:
-
-* Interactive testing
-* Auth flow (Bearer token)
-* All CRUD routes
-* Summary endpoints
-
----
-
-## **Authentication**
-
-### **1. Register**
-
-```
-POST /auth/register
-{
-  "email": "user@example.com",
-  "password": "yourpassword"
-}
-```
-
-### **2. Login**
-
-```
-POST /auth/login
-{
-  "email": "user@example.com",
-  "password": "yourpassword"
-}
-```
-
-Response:
-
-```
-{
-  "access_token": "...",
-  "token_type": "bearer"
-}
-```
-
-### **3. Authorize**
-
-Click **Authorize** in Swagger and enter:
-
-```
-Bearer <your-token>
+uvicorn src.finance_api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ---
 
-## **Example Workflows**
+## API Reference
 
-### **Create an account**
+All endpoints except `/health`, `/auth/register`, and `/auth/login` require a Bearer token in the `Authorization` header.
 
-```
-POST /accounts/
-```
+### Auth
 
-### **Add transactions**
+| Method | Endpoint          | Description              |
+|--------|-------------------|--------------------------|
+| POST   | `/auth/register`  | Create a new user        |
+| POST   | `/auth/login`     | Log in, get a JWT token  |
 
-```
-POST /transactions/
-```
-
-### **View monthly summary**
-
-```
-GET /summary/monthly?year=2025&month=2
+**Register / Login request body:**
+```json
+{ "email": "user@example.com", "password": "yourpassword" }
 ```
 
-### **Recent transactions**
+**Login response:**
+```json
+{ "access_token": "<jwt>", "token_type": "bearer" }
+```
+
+### Accounts
+
+| Method | Endpoint          | Description              |
+|--------|-------------------|--------------------------|
+| POST   | `/accounts/`      | Create an account        |
+| GET    | `/accounts/`      | List your accounts       |
+| DELETE | `/accounts/{id}`  | Delete an account        |
+
+### Transactions
+
+| Method | Endpoint               | Description                   |
+|--------|------------------------|-------------------------------|
+| POST   | `/transactions/`       | Record a transaction          |
+| GET    | `/transactions/`       | List all transactions         |
+| GET    | `/transactions/{id}`   | Get a single transaction      |
+| DELETE | `/transactions/{id}`   | Delete a transaction          |
+
+### Categories
+
+| Method | Endpoint              | Description              |
+|--------|-----------------------|--------------------------|
+| POST   | `/categories/`        | Create a category        |
+| GET    | `/categories/`        | List your categories     |
+| DELETE | `/categories/{id}`    | Delete a category        |
+
+### Summary
+
+| Method | Endpoint    | Description                              |
+|--------|-------------|------------------------------------------|
+| GET    | `/summary/` | Monthly income/expense summary per account |
+
+---
+
+## Configuration
+
+| Variable     | Default        | Description                        |
+|--------------|----------------|------------------------------------|
+| `SECRET_KEY` | `dev-secret`   | JWT signing key — **change this**  |
+
+Copy `.env.example` to `.env` and set your own `SECRET_KEY` before running.
+
+---
+
+## Project Structure
 
 ```
-GET /summary/recent
+finance_api/
+├── src/finance_api/
+│   ├── main.py          # FastAPI app, lifespan, router registration
+│   ├── auth.py          # JWT creation/verification, password hashing
+│   ├── config.py        # Settings loaded from environment
+│   ├── db.py            # SQLite engine and session dependency
+│   ├── models.py        # SQLModel table definitions
+│   ├── schemas.py       # Pydantic request/response schemas
+│   └── routers/
+│       ├── auth.py
+│       ├── accounts.py
+│       ├── transactions.py
+│       ├── categories.py
+│       └── summary.py
+├── requirements.txt
+├── Dockerfile
+└── .env.example
 ```
 
 ---
 
-## **Future Enhancements**
+## License
 
-* Link transactions → categories
-* Budget module (per category or per month)
-* Recurring transactions
-* Export CSV
-* Pagination and filtering
-* Graph-ready time series endpoints
-* Docker deployment
-
-
-
+MIT
